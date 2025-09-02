@@ -50,12 +50,13 @@ Module.register("MMM-Chart", {
     },
 
     socketNotificationReceived(notification, payload) {
-        if (notification === "CHART_DATA") {
-            this.chartConfigs = payload;
-            this.loaded = true;
-            this.updateDom();
-        }
-    },
+    if (notification === "CHART_DATA") {
+        console.log("MMM-Chart received CHART_DATA", payload);
+        this.chartConfigs = payload;
+        this.loaded = true;
+        this.updateDom();
+    }
+},
 
     getDom() {
         const wrapperEl = document.createElement("div");
