@@ -18,15 +18,20 @@ module.exports = NodeHelper.create({
 
             files.forEach((file) => {
                 try {
-                    // resolve relative to the module folder
-                    const filePath = path.resolve(__dirname, file.replace(/^modules\/MMM-Chart\//, ""));
+                    // If the file path is not absolute, resolve it inside this module folder
+                    let filePath = file;
+                    if (!path.isAbsolute(file)) {
+                        filePath = path.join(__dirname, file);
+                    }
+
                     const data = fs.readFileSync(filePath, "utf8");
                     charts.push(JSON.parse(data));
                 } catch (err) {
-                    console.error(`[${this.name}] Error reading file ${file}:`, err);
+                    console.error(`[${this.name}] Error reading file "${file}":`, err);
                 }
             });
 
+            // Always respond, even if empty, so the front-end unblocks
             this.sendSocketNotification("CHART_DATA", charts);
         }
     }
