@@ -4,6 +4,7 @@
 
 const NodeHelper = require("node_helper");
 const fs = require("fs");
+const path = require("path");
 
 module.exports = NodeHelper.create({
     start: function () {
@@ -17,7 +18,9 @@ module.exports = NodeHelper.create({
 
             files.forEach((file) => {
                 try {
-                    const data = fs.readFileSync(file, "utf8");
+                    // resolve relative to the module folder
+                    const filePath = path.resolve(__dirname, file.replace(/^modules\/MMM-Chart\//, ""));
+                    const data = fs.readFileSync(filePath, "utf8");
                     charts.push(JSON.parse(data));
                 } catch (err) {
                     console.error(`[${this.name}] Error reading file ${file}:`, err);
