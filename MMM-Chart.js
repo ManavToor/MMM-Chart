@@ -17,11 +17,21 @@
  * MIT Licensed.
  */
 
+/* global Chart Log Module */
+
+/* MagicMirror²
+ * Module: MMM-Chart
+ *
+ * By Evghenii Marinescu
+ * Modified to support multiple JSON chart configs
+ * MIT Licensed.
+ */
+
 Module.register("MMM-Chart", {
     defaults: {
         width: 200,
         height: 200,
-        chartFiles: [] // array of JSON file paths, e.g. ["modules/MMM-Chart/chart1.json", "modules/MMM-Chart/chart2.json"]
+        chartFiles: [] // example: ["modules/MMM-Chart/chart1.json", "modules/MMM-Chart/chart2.json"]
     },
 
     getScripts() {
@@ -35,33 +45,16 @@ Module.register("MMM-Chart", {
         this.chartConfigs = [];
         this.loaded = false;
 
-        // Load JSON chart configs
-        this.config.chartFiles.forEach((file, index) => {
-            this.loadFile(file, (response) => {
-                try {
-                    const jsonConfig = JSON.parse(response);
-                    this.chartConfigs[index] = jsonConfig;
-                    if (this.chartConfigs.filter(Boolean).length === this.config.chartFiles.length) {
-                        this.loaded = true;
-                        this.updateDom();
-                    }
-                } catch (e) {
-                    Log.error(`${this.name}: Failed to parse JSON from ${file}`, e);
-                }
-            });
-        });
+        // Ask node_helper to read the chart files
+        this.sendSocketNotification("LOAD_CHARTS", this.config.chartFiles);
     },
 
-    loadFile(file, callback) {
-        const xobj = new XMLHttpRequest();
-        xobj.overrideMimeType("application/json");
-        xobj.open("GET", file, true);
-        xobj.onreadystatechange = () => {
-            if (xobj.readyState === 4 && xobj.status === 200) {
-                callback(xobj.responseText);
-            }
-        };
-        xobj.send(null);
+    socketNotificationReceived(notification, payload) {
+        if (notification === "CHART_DATA") {
+            this.chartConfigs = payload;
+            this.loaded = true;
+            this.updateDom();
+        }
     },
 
     getDom() {
@@ -88,12 +81,17 @@ Module.register("MMM-Chart", {
             chartWrapper.appendChild(chartEl);
             wrapperEl.appendChild(chartWrapper);
 
-            // Initialize chart.js
+            // Initialize chart.js if not already
             if (!this.charts[i]) {
-                this.charts[i] = new Chart(chartEl.getContext("2d"), cfg);
+                try {
+                    this.charts[i] = new Chart(chartEl.getContext("2d"), cfg);
+                } catch (err) {
+                    Log.error(`${this.name}: Failed to load chart ${i}`, err);
+                }
             }
         });
 
         return wrapperEl;
     }
 });
+
